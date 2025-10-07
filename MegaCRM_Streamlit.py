@@ -29,20 +29,12 @@ st.markdown(
 SCOPE = ["https://www.googleapis.com/auth/spreadsheets"]
 
 def make_client_and_sheet_id():
-    try:
-        sa = st.secrets["gcp_service_account"]
-        sa_info = dict(sa) if hasattr(sa, "keys") else (json.loads(sa) if isinstance(sa, str) else {})
-        creds = Credentials.from_service_account_info(sa_info, scopes=SCOPE)
-        client = gspread.authorize(creds)
-        sheet_id = st.secrets["SPREADSHEET_ID"]
-        return client, sheet_id
-    except Exception:
-        creds = Credentials.from_service_account_file("service_account.json", scopes=SCOPE)
-        client = gspread.authorize(creds)
-        sheet_id = "1DV0KyDRYHofWR60zdx63a9BWBywTFhLavGAExPIa6LI"  # بدّلها إذا يلزم
-        return client, sheet_id
-
-client, SPREADSHEET_ID = make_client_and_sheet_id()
+    # نقرأ من secrets فقط
+    sa = dict(st.secrets["gcp_service_account"])
+    creds = Credentials.from_service_account_info(sa, scopes=SCOPE)
+    client = gspread.authorize(creds)
+    sheet_id = st.secrets["SPREADSHEET_ID"]
+    return client, sheet_id
 
 # ======================================================================
 #                               CONSTANTS
