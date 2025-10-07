@@ -26,24 +26,33 @@ st.markdown(
 )
 
 # ---------------- Google Sheets Auth ----------------
+# ---------------- Google Sheets Auth ----------------
 SCOPE = ["https://www.googleapis.com/auth/spreadsheets"]
 
 def make_client_and_sheet_id():
-    try:
-        sa = st.secrets["gcp_service_account"]
-        sa_info = dict(sa) if hasattr(sa, "keys") else (json.loads(sa) if isinstance(sa, str) else {})
-        creds = Credentials.from_service_account_info(sa_info, scopes=SCOPE)
-        client = gspread.authorize(creds)
-        sheet_id = st.secrets["SPREADSHEET_ID"]
-        return client, sheet_id
-    except Exception:
-        creds = Credentials.from_service_account_file("service_account.json", scopes=SCOPE)
-        client = gspread.authorize(creds)
-        sheet_id = "1DV0KyDRYHofWR60zdx63a9BWBywTFhLavGAExPIa6LI"  # بدّلها إذا يلزم
-        return client, sheet_id
+    # نقرأ الـ service account من Streamlit secrets فقط (بدون fallback لملف)
+    if "gcp_service_account" not in st.secrets:
+        st.error("❌ Secret 'gcp_service_account' مش موجود في Secrets.")
+        st.stop()
 
-client, SPREADSHEET_ID = make_client_and_sheet_id()
+    sa = st.secrets["gcp_service_account"]
+    # st.secrets يعطيني object شبه dict — نحوّلو dict صريح
+    sa_info = dict(sa) if hasattr(sa, "keys") else (
+        json.loads(sa) if isinstance(sa, str) else {}
+    )
+    if not sa_info:
+        st.error("❌ محتوى 'gcp_service_account' غير صالح (فارغ أو صيغة خطأ).")
+        st.stop()
 
+    # لازم SPREADSHEET_ID يكون top-level في secrets.toml (موش داخل الجروب)
+    sheet_id = st.secrets.get("SPREADSHEET_ID", "").strip()
+    if not sheet_id:
+        st.error("❌ Secret 'SPREADSHEET_ID' مفقود في Secrets.")
+        st.stop()
+
+    creds = Credentials.from_service_account_info(sa_info, scopes=SCOPE)
+    client = gspread.authorize(creds)
+    return client, sheet_id
 # ======================================================================
 #                               CONSTANTS
 # ======================================================================
